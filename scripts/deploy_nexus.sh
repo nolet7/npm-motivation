@@ -1,25 +1,39 @@
 #!/bin/bash
-set -e  # Exit on error
 
-echo "ÔøΩÔøΩ Uploading artifact to Nexus..."
+# Ensure necessary environment variables are set
+if [[ -z "$NEXUS_USERNAME" || -z "$NEXUS_PASSWORD" ]]; then
+    echo "‚ùå Error: Nexus username and password are not set."
+    echo "ÔøΩÔøΩ Please set NEXUS_USERNAME and NEXUS_PASSWORD environment variables."
+    exit 1
+fi
 
-NEXUS_URL="http://192.168.0.187:8081"
-NEXUS_REPO="npm-motivation-artifacts"
+# Define Nexus repository URL
+NEXUS_REPO_URL="http://192.168.0.187:8081/repository/npm-motivation-artifacts/"
+
+# Ensure the package is built before publishing
 ARTIFACT_PATH="./dist/npm-motivation.tar.gz"
-
 if [[ ! -f "$ARTIFACT_PATH" ]]; then
-    echo "‚ùå Build artifact not found! Run 'bash scripts/build.sh' first."
+    echo "‚ùå Build artifact not found!"
+    echo "Ì≤° Run 'bash scripts/build.sh' first."
     exit 1
 fi
 
-# Upload artifact using Basic Auth and handle errors
-HTTP_RESPONSE=$(curl -s -o response.txt -w "%{http_code}" -u admin:${NEXUS_API_KEY} --upload-file "$ARTIFACT_PATH" "$NEXUS_URL/repository/$NEXUS_REPO/npm-motivation.tar.gz")
+# Setup .npmrc for authentication
+echo "Ìª† Configuring npm authentication..."
+echo "registry=$NEXUS_REPO_URL" > ~/.npmrc
+echo "//192.168.0.187:8081/repository/npm-motivation-artifacts/:_auth=$(echo -n "$NEXUS_USERNAME:$NEXUS_PASSWORD" | base64)" >> ~/.npmrc
+echo "email=nolet7@gmail.com" >> ~/.npmrc
+echo "always-auth=true" >> ~/.npmrc
 
-if [[ "$HTTP_RESPONSE" -ne 201 ]]; then
-    echo "‚ùå Failed to upload artifact! HTTP Response: $HTTP_RESPONSE"
-    cat response.txt
+# Publish the package
+echo "Ì∫Ä Uploading package to Nexus..."
+npm publish --registry=$NEXUS_REPO_URL
+
+# Check if publishing was successful
+if [[ $? -eq 0 ]]; then
+    echo "‚úÖ Successfully uploaded npm-motivation to Nexus!"
+else
+    echo "‚ùå Failed to upload the package."
     exit 1
 fi
-
-echo "‚úÖ Artifact uploaded successfully to Nexus!"
 

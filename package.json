@@ -4,6 +4,9 @@
   "description": "A simple motivational quotes app",
   "type": "module",
   "main": "src/index.js",
+  "bin": {
+    "npm-motivation": "./src/index.js"
+  },
   "scripts": {
     "start": "node src/index.js",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest --coverage"
@@ -18,5 +21,9 @@
   "devDependencies": {
     "jest": "^29.7.0",
     "supertest": "^7.0.0"
+  },
+  "directories": {
+    "test": "tests"
   }
 }
+

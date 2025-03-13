@@ -22,5 +22,5 @@ app.get("/", (req, res) => {
 // Server must listen on 0.0.0.0 inside Docker
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {
-    console.log(`íº€ Server is running on port ${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
 });
