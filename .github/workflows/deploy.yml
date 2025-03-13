@@ -19,21 +19,24 @@ jobs:
           cache: 'npm'
           registry-url: http://192.168.0.187:8081/repository/npm-motivation-artifacts/
 
-      - name: Install dependencies (with auto-retry & fallback)
-        run: |
-          export NPM_CONFIG_FETCH_TIMEOUT=180000  # Increase timeout (3 min)
-          export NPM_CONFIG_MAX_SOCKETS=10        # Parallel downloads
-          npm set registry http://192.168.0.187:8081/repository/npm-motivation-artifacts/
+      - name: Authenticate with Nexus
+        run: echo "//192.168.0.187:8081/repository/npm-motivation-artifacts/:_authToken=${{ secrets.NPM_AUTH_TOKEN }}" > ~/.npmrc
 
-          echo "Installing dependencies from Nexus..."
+      - name: Install Dependencies (with Fallback)
+        run: |
+          export NPM_CONFIG_FETCH_TIMEOUT=180000
+          export NPM_CONFIG_MAX_SOCKETS=10
+          mkdir -p ~/.npm-cache
+
+          echo "Installing from Nexus..."
           for i in {1..3}; do
-            npm ci --prefer-offline --no-audit --progress=false --legacy-peer-deps && break || sleep 10
+            npm ci --prefer-offline --cache ~/.npm-cache --no-audit --progress=false --legacy-peer-deps && break || sleep 10
           done || {
             echo "Fallback: Installing from npmjs.org..."
-            npm ci --registry=https://registry.npmjs.org/ --prefer-offline --no-audit --progress=false --legacy-peer-deps || exit 1
+            npm ci --registry=https://registry.npmjs.org/ --prefer-offline --cache ~/.npm-cache --no-audit --progress=false --legacy-peer-deps || exit 1
           }
 
-      - name: Run tests (limited workers for performance)
+      - name: Run Tests (Optimized)
         run: npm test --maxWorkers=2 || exit 1
 
   publish-npm:
@@ -49,7 +52,10 @@ jobs:
           node-version: 18
           registry-url: http://192.168.0.187:8081/repository/npm-motivation-artifacts/
 
-      - name: Publish to Nexus (with auto-retry)
+      - name: Authenticate with Nexus
+        run: echo "//192.168.0.187:8081/repository/npm-motivation-artifacts/:_authToken=${{ secrets.NPM_AUTH_TOKEN }}" > ~/.npmrc
+
+      - name: Publish to Nexus (with Auto-Retry)
         run: |
           echo "Publishing package..."
           for i in {1..3}; do
@@ -65,17 +71,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Login to Docker Hub
+      - name: Login to Docker Hub (Auto-Retry)
         run: |
           echo "Logging into Docker Hub..."
-          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin || exit 1
+          for i in {1..3}; do
+            echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin && break || sleep 10
+          done || exit 1
 
-      - name: Build Docker Image (Optimized with cache)
+      - name: Build Optimized Docker Image
         run: |
           echo "Building Docker image..."
           docker build --pull --rm --no-cache -t noletengine/npm-motivation:latest . || exit 1
 
-      - name: Push Docker Image (with retry)
+      - name: Push Docker Image (Auto-Retry)
         run: |
           echo "Pushing Docker image..."
           for i in {1..3}; do
@@ -93,15 +101,22 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            echo "Stopping old Docker container..."
-            docker stop npm-motivation || true
-            docker rm npm-motivation || true
+            echo "Checking if container is running..."
+            if docker ps -q -f name=npm-motivation | grep -q .; then
+              echo "Stopping old container..."
+              docker stop npm-motivation
+              docker rm npm-motivation
+            fi
 
             echo "Pulling latest Docker image..."
             docker pull noletengine/npm-motivation:latest || exit 1
 
-            echo "Deploying using Docker Compose..."
+            echo "Deploying with Docker Compose..."
             cd ~/npm-motivation-deployment
             docker-compose down || exit 1
             docker-compose up -d || exit 1
+
+            echo "Ensuring the service is running..."
+            sleep 5
+            curl -I http://localhost:3000 || exit 1
 
