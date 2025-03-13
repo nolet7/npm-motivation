@@ -1,4 +1,4 @@
-name: Deploy to Docker Hub
+name: Deploy npm-motivation
 
 on:
   push:
@@ -9,23 +9,70 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          node-version: 18
+          registry-url: http://192.168.0.187:8081/repository/npm-motivation-artifacts/
 
-      - name: Build and Push Docker Image
-        uses: docker/build-push-action@v5
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test
+
+  publish-npm:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: noletengine/npm-motivation:latest
+          node-version: 18
+          registry-url: http://192.168.0.187:8081/repository/npm-motivation-artifacts/
+
+      - name: Publish to Nexus
+        run: npm publish --registry=http://192.168.0.187:8081/repository/npm-motivation-artifacts/
+        env:
+          NPM_CONFIG_USERCONFIG: ~/.npmrc
+          NEXUS_USER: ${{ secrets.NEXUS_USER }}
+          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+
+  build-and-push-docker:
+    needs: publish-npm
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Login to Docker Hub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      - name: Build Docker Image
+        run: docker build -t noletengine/npm-motivation:latest .
+
+      - name: Push Docker Image
+        run: docker push noletengine/npm-motivation:latest
+
+  deploy:
+    needs: build-and-push-docker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            docker pull noletengine/npm-motivation:latest
+            docker stop npm-motivation || true
+            docker rm npm-motivation || true
+            docker run -d -p 3000:3000 --name npm-motivation noletengine/npm-motivation:latest
 
