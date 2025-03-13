@@ -19,10 +19,10 @@ jobs:
           registry-url: http://192.168.0.187:8081/repository/npm-motivation-artifacts/
 
       - name: Install dependencies
-        run: npm install
+        run: npm install || exit 1
 
       - name: Run tests
-        run: npm test
+        run: npm test || exit 1
 
   publish-npm:
     needs: build
@@ -38,11 +38,9 @@ jobs:
           registry-url: http://192.168.0.187:8081/repository/npm-motivation-artifacts/
 
       - name: Publish to Nexus
-        run: npm publish --registry=http://192.168.0.187:8081/repository/npm-motivation-artifacts/
+        run: npm publish --registry=http://192.168.0.187:8081/repository/npm-motivation-artifacts/ || exit 1
         env:
-          NPM_CONFIG_USERCONFIG: ~/.npmrc
-          NEXUS_USER: ${{ secrets.NEXUS_USER }}
-          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
 
   build-and-push-docker:
     needs: publish-npm
@@ -52,13 +50,13 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Login to Docker Hub
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin || exit 1
 
       - name: Build Docker Image
-        run: docker build -t noletengine/npm-motivation:latest .
+        run: docker build -t noletengine/npm-motivation:latest . || exit 1
 
       - name: Push Docker Image
-        run: docker push noletengine/npm-motivation:latest
+        run: docker push noletengine/npm-motivation:latest || exit 1
 
   deploy:
     needs: build-and-push-docker
@@ -71,8 +69,13 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            docker pull noletengine/npm-motivation:latest
-            docker stop npm-motivation || true
-            docker rm npm-motivation || true
-            docker run -d -p 3000:3000 --name npm-motivation noletengine/npm-motivation:latest
+            # Pull latest image
+            docker pull noletengine/npm-motivation:latest || exit 1
+
+            # Deploy with Docker Compose
+            cd ~/npm-motivation-deployment
+            echo "Stopping existing container..."
+            docker-compose down || exit 1
+            echo "Starting new container..."
+            docker-compose up -d || exit 1
 
