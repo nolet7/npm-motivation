@@ -9,7 +9,17 @@ on:
 jobs:
   deploy-using-docker:
     runs-on: ubuntu-latest
+
+    services:
+      app:
+        image: noletengine/npm-motivation:latest
+        ports:
+          - 3002:3000
+
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
       - name: Pull & Run Docker Image
         run: |
           echo "Pulling latest Docker image from Docker Hub..."
@@ -18,9 +28,15 @@ jobs:
           echo "Running container..."
           docker run -d --name npm-motivation-test -p 3002:3000 noletengine/npm-motivation:latest
 
+      - name: Get Deployment URL
+        run: |
+          echo "âœ… Deployment is running on:"
+          echo "í±‰ http://127.0.0.1:3002"
+          echo "í±‰ $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+
       - name: Verify Deployment
         run: |
           echo "Waiting for service to start..."
           sleep 5
-          curl -I http://localhost:3002 || exit 1
+          curl -I http://127.0.0.1:3002 || exit 1
 
