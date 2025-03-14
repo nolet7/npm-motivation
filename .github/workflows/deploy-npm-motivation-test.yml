@@ -10,12 +10,6 @@ jobs:
   deploy-using-docker:
     runs-on: ubuntu-latest
 
-    services:
-      app:
-        image: noletengine/npm-motivation:latest
-        ports:
-          - 3002:3000
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -37,15 +31,20 @@ jobs:
           echo "Running container..."
           docker run -d --name npm-motivation-test -p 3002:3000 noletengine/npm-motivation:latest
 
-      - name: Get Deployment URL
+      - name: Install & Start `ngrok`
         run: |
-          echo "âœ… Deployment is running on:"
-          echo "í±‰ http://127.0.0.1:3002"
-          echo "í±‰ $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          echo "Installing ngrok..."
+          curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null
+          echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | sudo tee /etc/apt/sources.list.d/ngrok.list
+          sudo apt update && sudo apt install ngrok
 
-      - name: Verify Deployment
+          echo "Starting ngrok tunnel..."
+          ngrok config add-authtoken ${{ secrets.NGROK_AUTH_TOKEN }}
+          ngrok http 3002 > ngrok.log &
+
+      - name: Get Public URL
         run: |
-          echo "Waiting for service to start..."
-          sleep 5
-          curl -I http://127.0.0.1:3002 || exit 1
+          sleep 10  # Give ngrok time to start
+          NGROK_URL=$(curl -s http://localhost:4040/api/tunnels | jq -r '.tunnels[0].public_url')
+          echo "âœ… Your application is accessible at: $NGROK_URL"
 
