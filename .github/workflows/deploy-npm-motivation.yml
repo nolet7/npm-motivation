@@ -26,7 +26,7 @@ jobs:
       - name: Authenticate with Nexus (Using Username & Password)
         run: |
           echo "registry=http://192.168.0.187:8081/repository/npm-motivation-artifacts/" > ~/.npmrc
-          echo "_auth=$(echo -n '${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}' | base64)" >> ~/.npmrc
+          echo "//192.168.0.187:8081/repository/npm-motivation-artifacts/:_auth=$(echo -n '${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}' | base64)" >> ~/.npmrc
           echo "always-auth=true" >> ~/.npmrc
           echo "email=nolet7@gmail.com" >> ~/.npmrc
           cat ~/.npmrc
