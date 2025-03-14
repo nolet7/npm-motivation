@@ -21,13 +21,13 @@ jobs:
         with:
           node-version: 18
           cache: 'npm'
-          registry-url: https://nexus.example.com/repository/npm-motivation-artifacts/
+          registry-url: https://76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/
 
       - name: Authenticate with Nexus (Using Username & Password)
         run: |
           rm -f ~/.npmrc  # Ensure no previous incorrect settings exist
 
-          echo "registry=https://nexus.example.com/repository/npm-motivation-artifacts/" > ~/.npmrc
+          echo "registry=https://76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/" > ~/.npmrc
           echo "//nexus.example.com/repository/npm-motivation-artifacts/:_auth=$(echo -n '${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}' | base64)" >> ~/.npmrc
           echo "//nexus.example.com/repository/npm-motivation-artifacts/:username=${{ secrets.NEXUS_USERNAME }}" >> ~/.npmrc
           echo "//nexus.example.com/repository/npm-motivation-artifacts/:password=${{ secrets.NEXUS_PASSWORD }}" >> ~/.npmrc
@@ -41,7 +41,7 @@ jobs:
 
       - name: Force Nexus Authentication for npm
         run: |
-          npm config set registry https://nexus.example.com/repository/npm-motivation-artifacts/
+          npm config set registry https://76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/
           npm config set always-auth true
           npm config set _auth "$(echo -n '${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}' | base64)"
           npm config set username "${{ secrets.NEXUS_USERNAME }}"
@@ -65,7 +65,7 @@ jobs:
       - name: Download Package from Nexus
         run: |
           curl -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -O \
-          "https://nexus.example.com/repository/npm-motivation-artifacts/npm-motivation-${{ env.BUILD_VERSION }}.tgz"
+          "https://76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/npm-motivation-${{ env.BUILD_VERSION }}.tgz"
           ls -lh
           tar -xzf npm-motivation-${{ env.BUILD_VERSION }}.tgz
 
