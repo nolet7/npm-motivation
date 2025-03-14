@@ -28,28 +28,23 @@ jobs:
           rm -f ~/.npmrc  # Ensure no previous incorrect settings exist
 
           echo "registry=https://76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/" > ~/.npmrc
-          echo "//nexus.example.com/repository/npm-motivation-artifacts/:_auth=$(echo -n '${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}' | base64)" >> ~/.npmrc
-          echo "//nexus.example.com/repository/npm-motivation-artifacts/:username=${{ secrets.NEXUS_USERNAME }}" >> ~/.npmrc
-          echo "//nexus.example.com/repository/npm-motivation-artifacts/:password=${{ secrets.NEXUS_PASSWORD }}" >> ~/.npmrc
+          echo "//76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/:_auth=$(echo -n '${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}' | base64)" >> ~/.npmrc
+          echo "//76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/:username=${{ secrets.NEXUS_USERNAME }}" >> ~/.npmrc
+          echo "//76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/:password=${{ secrets.NEXUS_PASSWORD }}" >> ~/.npmrc
           echo "always-auth=true" >> ~/.npmrc
           echo "email=nolet7@gmail.com" >> ~/.npmrc
 
           cat ~/.npmrc  # Debugging: Ensure .npmrc is correctly set
 
-      - name: Debug `.npmrc` Before Installing Dependencies
-        run: cat ~/.npmrc
-
-      - name: Force Nexus Authentication for npm
+      - name: Debug Nexus Authentication
         run: |
-          npm config set registry https://76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/
-          npm config set always-auth true
-          npm config set _auth "$(echo -n '${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}' | base64)"
-          npm config set username "${{ secrets.NEXUS_USERNAME }}"
-          npm config set password "${{ secrets.NEXUS_PASSWORD }}"
+          curl -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -I \
+               https://76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/ || \
+               echo "❌ Nexus authentication failed"
 
       - name: Install Dependencies & Jest
         run: |
-          npm ci --prefer-offline --legacy-peer-deps
+          npm ci --prefer-offline --legacy-peer-deps || npm install --legacy-peer-deps
           npm install --save-dev jest
 
       - name: Run Tests
