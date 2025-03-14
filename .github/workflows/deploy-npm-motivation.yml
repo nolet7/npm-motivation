@@ -25,13 +25,11 @@ jobs:
 
       - name: Authenticate with Nexus (Using Username & Password)
         run: |
-          echo "//192.168.0.187:8081/repository/npm-motivation-artifacts/:_auth=$(echo -n '${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}' | base64)" > ~/.npmrc
-          echo "registry=http://192.168.0.187:8081/repository/npm-motivation-artifacts/" >> ~/.npmrc
-
-      - name: Setup NPM Cache
-        run: |
-          mkdir -p ~/.npm-cache
-          npm config set cache ~/.npm-cache
+          echo "registry=http://192.168.0.187:8081/repository/npm-motivation-artifacts/" > ~/.npmrc
+          echo "_auth=$(echo -n '${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}' | base64)" >> ~/.npmrc
+          echo "always-auth=true" >> ~/.npmrc
+          echo "email=nolet7@gmail.com" >> ~/.npmrc
+          cat ~/.npmrc
 
       - name: Install Dependencies & Jest
         run: |
@@ -41,23 +39,8 @@ jobs:
       - name: Run Tests
         run: npm test --maxWorkers=2 || exit 1
 
-  publish-npm:
-    needs: build
-    runs-on: self-hosted
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Publish to Nexus with Versioning
-        run: |
-          npm version $BUILD_VERSION --no-git-tag-version
-          npm publish --registry=http://192.168.0.187:8081/repository/npm-motivation-artifacts/
-        env:
-          NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
-          NEXUS_PASSWORD: ${{ secrets.NEXUS_PASSWORD }}
-
   build-and-push-docker:
-    needs: publish-npm
+    needs: build
     runs-on: self-hosted
     steps:
       - name: Checkout code
@@ -65,74 +48,20 @@ jobs:
 
       - name: Download Package from Nexus
         run: |
-          curl -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -O http://192.168.0.187:8081/repository/npm-motivation-artifacts/npm-motivation-$BUILD_VERSION.tgz
-          tar -xzf npm-motivation-$BUILD_VERSION.tgz
+          curl -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -O \
+          "http://192.168.0.187:8081/repository/npm-motivation-artifacts/npm-motivation-${{ env.BUILD_VERSION }}.tgz"
+          ls -lh
+          tar -xzf npm-motivation-${{ env.BUILD_VERSION }}.tgz
 
       - name: Login to Docker Hub
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-      - name: Build Docker Image with Versioning
+      - name: Build & Push Docker Image
         run: |
           echo "Building Docker image with version $BUILD_VERSION"
           docker build --pull --rm --no-cache -t noletengine/npm-motivation:latest .
           docker tag noletengine/npm-motivation:latest noletengine/npm-motivation:$BUILD_VERSION
 
-      - name: Push Docker Image with Versioning
-        run: |
           docker push noletengine/npm-motivation:latest
           docker push noletengine/npm-motivation:$BUILD_VERSION
-
-  deploy-test:
-    needs: build-and-push-docker
-    runs-on: self-hosted
-    steps:
-      - name: Deploy to Test Environment (192.168.0.176)
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.TEST_SERVER_IP }}
-          username: ${{ secrets.TEST_SERVER_USER }}
-          key: ${{ secrets.TEST_SSH_PRIVATE_KEY }}
-          script: |
-            echo "Stopping old container (if exists)..."
-            if docker ps -q -f name=npm-motivation | grep -q .; then
-              docker stop npm-motivation
-              docker rm npm-motivation
-            fi
-
-            echo "Pulling latest Docker image..."
-            docker pull noletengine/npm-motivation:$BUILD_VERSION || exit 1
-
-            echo "Starting new version..."
-            docker run -d --name npm-motivation -p 3001:3000 noletengine/npm-motivation:$BUILD_VERSION
-
-            echo "Validating service..."
-            sleep 5
-            curl -I http://localhost:3001 || exit 1
-
-  deploy-demo-prod:
-    needs: build-and-push-docker
-    runs-on: self-hosted
-    steps:
-      - name: Deploy to Demo_Prod Environment (192.168.0.119)
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.DEMO_PROD_SERVER_IP }}
-          username: ${{ secrets.DEMO_PROD_SERVER_USER }}
-          key: ${{ secrets.DEMO_PROD_SSH_PRIVATE_KEY }}
-          script: |
-            echo "Stopping old container (if exists)..."
-            if docker ps -q -f name=npm-motivation | grep -q .; then
-              docker stop npm-motivation
-              docker rm npm-motivation
-            fi
-
-            echo "Pulling latest Docker image..."
-            docker pull noletengine/npm-motivation:$BUILD_VERSION || exit 1
-
-            echo "Starting new version..."
-            docker run -d --name npm-motivation -p 3000:3000 noletengine/npm-motivation:$BUILD_VERSION
-
-            echo "Validating service..."
-            sleep 5
-            curl -I http://localhost:3000 || exit 1
 
