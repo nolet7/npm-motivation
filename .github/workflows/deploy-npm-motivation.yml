@@ -33,7 +33,14 @@ jobs:
           echo "//192.168.0.187:8081/repository/npm-motivation-artifacts/:password=${{ secrets.NEXUS_PASSWORD }}" >> ~/.npmrc
           echo "always-auth=true" >> ~/.npmrc
           echo "email=nolet7@gmail.com" >> ~/.npmrc
-          cat ~/.npmrc
+
+          cat ~/.npmrc  # Debugging: Ensure .npmrc is correctly set
+
+      - name: Set NPM Config Path
+        run: export NPM_CONFIG_USERCONFIG=$HOME/.npmrc
+
+      - name: Debug `.npmrc` Before Installing Dependencies
+        run: cat ~/.npmrc
 
       - name: Install Dependencies & Jest
         run: |
