@@ -1,28 +1,29 @@
-name: Debug Nexus Authentication
+name: Deploy npm-motivation
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
-  debug-nexus:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Debug Runner Info
-        run: |
-          echo "GitHub Runner: $(uname -a)"
-          echo "Current User: $(whoami)"
+      - name: Generate Build Version
+        run: echo "BUILD_VERSION=$(date +'%Y.%m.%d-%H%M')" >> $GITHUB_ENV
 
-      - name: Test Nexus Authentication
-        run: |
-          echo "Ì¥Ñ Testing authentication with Nexus..."
-          curl -u "admin:Iloveyou@12" -I \
-               https://76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/ || \
-               echo "‚ùå Nexus authentication failed"
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+          registry-url: https://76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/
 
-      - name: Configure `.npmrc`
+      - name: Authenticate with Nexus (Using Username & Password)
         run: |
           rm -f ~/.npmrc  # Ensure no previous incorrect settings exist
 
@@ -33,15 +34,40 @@ jobs:
           echo "always-auth=true" >> ~/.npmrc
           echo "email=nolet7@gmail.com" >> ~/.npmrc
 
-          cat ~/.npmrc  # Debugging: Ensure .npmrc is correctly set
+      - name: Debug `.npmrc` Before Installing Dependencies
+        run: cat ~/.npmrc
 
-      - name: Check Nexus URL Accessibility
+      - name: Test Nexus Authentication in GitHub Actions
         run: |
-          curl -I https://76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/ || \
-          echo "‚ùå Nexus is unreachable from GitHub Actions"
+          npm whoami --registry=https://76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/ || \
+          echo "‚ùå Authentication failed in GitHub Actions"
 
-      - name: Test `npm install` from Nexus
+      - name: Install Dependencies
+        run: npm install --registry=https://76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/
+
+  build-and-push-docker:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Download Package from Nexus
         run: |
-          npm install --registry=https://76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/ || \
-          echo "‚ùå NPM install failed"
+          curl -u "admin:Iloveyou@12" -O \
+          "https://76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/npm-motivation-${{ env.BUILD_VERSION }}.tgz"
+          ls -lh
+          tar -xzf npm-motivation-${{ env.BUILD_VERSION }}.tgz
+
+      - name: Login to Docker Hub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      - name: Build & Push Docker Image
+        run: |
+          echo "Building Docker image with version $BUILD_VERSION"
+          docker build --pull --rm --no-cache -t noletengine/npm-motivation:latest .
+          docker tag noletengine/npm-motivation:latest noletengine/npm-motivation:$BUILD_VERSION
+
+          docker push noletengine/npm-motivation:latest
+          docker push noletengine/npm-motivation:$BUILD_VERSION
 
