@@ -1,5 +1,3 @@
 #!/bin/bash
-set -e
-echo "í·ª Running tests..."
-npm test
-
+echo "Running tests with coverage..."
+NODE_OPTIONS=--experimental-vm-modules jest --coverage

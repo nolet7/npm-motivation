@@ -1,0 +1,69 @@
+name: CI/CD for npm-motivation
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-test:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests with coverage
+        run: npm test -- --coverage
+
+  docker-build:
+    needs: build-test
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Log in to DockerHub
+        run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/npm-motivation:latest .
+          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/npm-motivation:v1.0.0
+
+      - name: Push Docker image to DockerHub
+        run: |
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/npm-motivation:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/npm-motivation:v1.0.0
+
+  deploy:
+    needs: docker-build
+    runs-on: self-hosted
+    strategy:
+      matrix:
+        environment: [Demo_Prod_Env, xAI_Test_Env]
+        include:
+          - environment: Demo_Prod_Env
+            host: 192.168.0.119
+            script: scripts/deploy_demo_prod.sh
+          - environment: xAI_Test_Env
+            host: 192.168.0.176
+            script: scripts/deploy_xai_test.sh
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Deploy to ${{ matrix.environment }}
+        run: bash ${{ matrix.script }}
+
