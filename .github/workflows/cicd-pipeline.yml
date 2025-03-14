@@ -11,7 +11,7 @@ on:
 
 jobs:
   build-test:
-    runs-on: self-hosted
+    runs-on: self-hosted  # Runs on 192.168.0.178
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -29,7 +29,7 @@ jobs:
 
   store-artifacts:
     needs: build-test
-    runs-on: self-hosted
+    runs-on: self-hosted  # Runs on 192.168.0.178
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -39,17 +39,17 @@ jobs:
 
       - name: Configure JFrog CLI
         run: |
-          jfrog config add artifactory --url="https://your-instance.jfrog.io/artifactory" --apikey="${{ secrets.JFROG }}" --interactive=false
+          jfrog config add artifactory --url="https://nolet7.jfrog.io/artifactory" --apikey="${{ secrets.JFROG_API_KEY }}" --interactive=false
 
       - name: Build the project
         run: bash scripts/build.sh
 
       - name: Upload artifact to JFrog
-        run: jfrog rt upload "dist/*" "npm-motivation/"
-  
+        run: jfrog rt upload "dist/*" "npm-motivation-npm/"
+
   docker-build:
     needs: store-artifacts
-    runs-on: self-hosted
+    runs-on: self-hosted  # Runs on 192.168.0.178
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -69,21 +69,15 @@ jobs:
 
   deploy:
     needs: docker-build
-    runs-on: self-hosted
-    strategy:
-      matrix:
-        environment: [Demo_Prod_Env, xAI_Test_Env]
-        include:
-          - environment: Demo_Prod_Env
-            host: 192.168.0.119
-            script: scripts/deploy_demo_prod.sh
-          - environment: xAI_Test_Env
-            host: 192.168.0.176
-            script: scripts/deploy_xai_test.sh
+    runs-on: self-hosted  # Runs on 192.168.0.178
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Deploy to ${{ matrix.environment }}
-        run: bash ${{ matrix.script }}
+      - name: Deploy to Project Server (192.168.0.150)
+        run: |
+          ssh -o StrictHostKeyChecking=no user@192.168.0.150 << 'EOF'
+          cd ~/npm-motivation
+          bash scripts/deploy_project_server.sh
+          EOF
 
