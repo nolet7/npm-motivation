@@ -21,16 +21,16 @@ jobs:
         with:
           node-version: 18
           cache: 'npm'
-          registry-url: http://192.168.0.187:8081/repository/npm-motivation-artifacts/
+          registry-url: https://nexus.example.com/repository/npm-motivation-artifacts/
 
       - name: Authenticate with Nexus (Using Username & Password)
         run: |
           rm -f ~/.npmrc  # Ensure no previous incorrect settings exist
 
-          echo "registry=http://192.168.0.187:8081/repository/npm-motivation-artifacts/" > ~/.npmrc
-          echo "//192.168.0.187:8081/repository/npm-motivation-artifacts/:_auth=$(echo -n '${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}' | base64)" >> ~/.npmrc
-          echo "//192.168.0.187:8081/repository/npm-motivation-artifacts/:username=${{ secrets.NEXUS_USERNAME }}" >> ~/.npmrc
-          echo "//192.168.0.187:8081/repository/npm-motivation-artifacts/:password=${{ secrets.NEXUS_PASSWORD }}" >> ~/.npmrc
+          echo "registry=https://nexus.example.com/repository/npm-motivation-artifacts/" > ~/.npmrc
+          echo "//nexus.example.com/repository/npm-motivation-artifacts/:_auth=$(echo -n '${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}' | base64)" >> ~/.npmrc
+          echo "//nexus.example.com/repository/npm-motivation-artifacts/:username=${{ secrets.NEXUS_USERNAME }}" >> ~/.npmrc
+          echo "//nexus.example.com/repository/npm-motivation-artifacts/:password=${{ secrets.NEXUS_PASSWORD }}" >> ~/.npmrc
           echo "always-auth=true" >> ~/.npmrc
           echo "email=nolet7@gmail.com" >> ~/.npmrc
 
@@ -41,7 +41,7 @@ jobs:
 
       - name: Force Nexus Authentication for npm
         run: |
-          npm config set registry http://192.168.0.187:8081/repository/npm-motivation-artifacts/
+          npm config set registry https://nexus.example.com/repository/npm-motivation-artifacts/
           npm config set always-auth true
           npm config set _auth "$(echo -n '${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}' | base64)"
           npm config set username "${{ secrets.NEXUS_USERNAME }}"
@@ -65,7 +65,7 @@ jobs:
       - name: Download Package from Nexus
         run: |
           curl -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -O \
-          "http://192.168.0.187:8081/repository/npm-motivation-artifacts/npm-motivation-${{ env.BUILD_VERSION }}.tgz"
+          "https://nexus.example.com/repository/npm-motivation-artifacts/npm-motivation-${{ env.BUILD_VERSION }}.tgz"
           ls -lh
           tar -xzf npm-motivation-${{ env.BUILD_VERSION }}.tgz
 
