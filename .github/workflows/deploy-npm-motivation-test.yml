@@ -20,6 +20,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Stop Existing Containers on Port 3002
+        run: |
+          CONTAINER_ID=$(docker ps -q --filter "publish=3002")
+          if [ ! -z "$CONTAINER_ID" ]; then
+            echo "⚠️ Stopping existing container running on port 3002..."
+            docker stop "$CONTAINER_ID"
+            docker rm "$CONTAINER_ID"
+          fi
+
       - name: Pull & Run Docker Image
         run: |
           echo "Pulling latest Docker image from Docker Hub..."
