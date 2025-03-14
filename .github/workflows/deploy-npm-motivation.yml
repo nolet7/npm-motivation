@@ -37,10 +37,18 @@ jobs:
           cat ~/.npmrc  # Debugging: Ensure .npmrc is correctly set
 
       - name: Set NPM Config Path
-        run: export NPM_CONFIG_USERCONFIG=$HOME/.npmrc
+        run: echo "NPM_CONFIG_USERCONFIG=$HOME/.npmrc" >> $GITHUB_ENV
 
       - name: Debug `.npmrc` Before Installing Dependencies
         run: cat ~/.npmrc
+
+      - name: Force Nexus Authentication for npm
+        run: |
+          npm config set registry http://192.168.0.187:8081/repository/npm-motivation-artifacts/
+          npm config set always-auth true
+          npm config set _auth "$(echo -n '${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}' | base64)"
+          npm config set username "${{ secrets.NEXUS_USERNAME }}"
+          npm config set password "${{ secrets.NEXUS_PASSWORD }}"
 
       - name: Install Dependencies & Jest
         run: |
@@ -75,3 +83,4 @@ jobs:
 
           docker push noletengine/npm-motivation:latest
           docker push noletengine/npm-motivation:$BUILD_VERSION
+
