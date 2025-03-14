@@ -1,3 +1,4 @@
+# Updated pipeline
 name: CI/CD for npm-motivation with JFrog
 
 on:
