@@ -27,7 +27,7 @@ jobs:
         run: |
           rm -f ~/.npmrc  # Ensure no previous incorrect settings exist
 
-          echo "registry=https://admin:Iloveyou@12@76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/" > ~/.npmrc
+          echo "registry=https://76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/" > ~/.npmrc
           echo "//76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/:_auth=$(echo -n 'admin:Iloveyou@12' | base64)" >> ~/.npmrc
           echo "//76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/:username=admin" >> ~/.npmrc
           echo "//76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/:password=Iloveyou@12" >> ~/.npmrc
@@ -75,3 +75,4 @@ jobs:
 
           docker push noletengine/npm-motivation:latest
           docker push noletengine/npm-motivation:$BUILD_VERSION
+
