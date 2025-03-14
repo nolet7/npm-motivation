@@ -1,7 +1,6 @@
 #!/bin/bash
 echo "Deploying to nolet7 xAI Test_Env (192.168.0.176)..."
 
-# Set up SSH key
 mkdir -p ~/.ssh
 echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
 chmod 600 ~/.ssh/id_rsa

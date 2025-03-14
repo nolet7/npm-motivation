@@ -1,4 +1,4 @@
-name: CI/CD for npm-motivation
+name: CI/CD for npm-motivation with JFrog
 
 on:
   push:
@@ -27,8 +27,28 @@ jobs:
       - name: Run tests with coverage
         run: npm test -- --coverage
 
-  docker-build:
+  store-artifacts:
     needs: build-test
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install JFrog CLI
+        run: curl -fL https://getcli.jfrog.io | sh && mv jfrog /usr/local/bin/
+
+      - name: Configure JFrog CLI
+        run: |
+          jfrog config add artifactory --url="https://your-instance.jfrog.io/artifactory" --apikey="${{ secrets.JFROG }}" --interactive=false
+
+      - name: Build the project
+        run: bash scripts/build.sh
+
+      - name: Upload artifact to JFrog
+        run: jfrog rt upload "dist/*" "npm-motivation/"
+  
+  docker-build:
+    needs: store-artifacts
     runs-on: self-hosted
     steps:
       - name: Checkout repository
@@ -37,7 +57,7 @@ jobs:
       - name: Log in to DockerHub
         run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
-      - name: Build Docker image
+      - name: Build and tag Docker image
         run: |
           docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/npm-motivation:latest .
           docker tag ${{ secrets.DOCKERHUB_USERNAME }}/npm-motivation:v1.0.0
