@@ -23,14 +23,14 @@ jobs:
           cache: 'npm'
           registry-url: https://76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/
 
-      - name: Authenticate with Nexus (Using Username & Password)
+      - name: Authenticate with Nexus (Using GitHub Secrets)
         run: |
           rm -f ~/.npmrc  # Ensure no previous incorrect settings exist
 
           echo "registry=https://76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/" > ~/.npmrc
-          echo "//76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/:_auth=$(echo -n 'admin:Iloveyou@12' | base64)" >> ~/.npmrc
-          echo "//76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/:username=admin" >> ~/.npmrc
-          echo "//76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/:password=Iloveyou@12" >> ~/.npmrc
+          echo "//76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/:_auth=$(echo -n '${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}' | base64)" >> ~/.npmrc
+          echo "//76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/:username=${{ secrets.NEXUS_USERNAME }}" >> ~/.npmrc
+          echo "//76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/:password=${{ secrets.NEXUS_PASSWORD }}" >> ~/.npmrc
           echo "always-auth=true" >> ~/.npmrc
           echo "email=nolet7@gmail.com" >> ~/.npmrc
 
@@ -54,7 +54,7 @@ jobs:
 
       - name: Download Package from Nexus
         run: |
-          curl -u "admin:Iloveyou@12" -O \
+          curl -u "${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}" -O \
           "https://76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/npm-motivation-${{ env.BUILD_VERSION }}.tgz"
           ls -lh
           tar -xzf npm-motivation-${{ env.BUILD_VERSION }}.tgz
