@@ -1,0 +1,47 @@
+name: Debug Nexus Authentication
+
+on:
+  workflow_dispatch:
+
+jobs:
+  debug-nexus:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Debug Runner Info
+        run: |
+          echo "GitHub Runner: $(uname -a)"
+          echo "Current User: $(whoami)"
+
+      - name: Test Nexus Authentication
+        run: |
+          echo "Ì¥Ñ Testing authentication with Nexus..."
+          curl -u "admin:Iloveyou@12" -I \
+               https://76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/ || \
+               echo "‚ùå Nexus authentication failed"
+
+      - name: Configure `.npmrc`
+        run: |
+          rm -f ~/.npmrc  # Ensure no previous incorrect settings exist
+
+          echo "registry=https://76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/" > ~/.npmrc
+          echo "//76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/:_auth=$(echo -n 'admin:Iloveyou@12' | base64)" >> ~/.npmrc
+          echo "//76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/:username=admin" >> ~/.npmrc
+          echo "//76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/:password=Iloveyou@12" >> ~/.npmrc
+          echo "always-auth=true" >> ~/.npmrc
+          echo "email=nolet7@gmail.com" >> ~/.npmrc
+
+          cat ~/.npmrc  # Debugging: Ensure .npmrc is correctly set
+
+      - name: Check Nexus URL Accessibility
+        run: |
+          curl -I https://76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/ || \
+          echo "‚ùå Nexus is unreachable from GitHub Actions"
+
+      - name: Test `npm install` from Nexus
+        run: |
+          npm install --registry=https://76cd-16-98-9-4.ngrok-free.app/repository/npm-motivation-artifacts/ || \
+          echo "‚ùå NPM install failed"
+
