@@ -25,8 +25,12 @@ jobs:
 
       - name: Authenticate with Nexus (Using Username & Password)
         run: |
+          rm -f ~/.npmrc  # Ensure no previous incorrect settings exist
+
           echo "registry=http://192.168.0.187:8081/repository/npm-motivation-artifacts/" > ~/.npmrc
           echo "//192.168.0.187:8081/repository/npm-motivation-artifacts/:_auth=$(echo -n '${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}' | base64)" >> ~/.npmrc
+          echo "//192.168.0.187:8081/repository/npm-motivation-artifacts/:username=${{ secrets.NEXUS_USERNAME }}" >> ~/.npmrc
+          echo "//192.168.0.187:8081/repository/npm-motivation-artifacts/:password=${{ secrets.NEXUS_PASSWORD }}" >> ~/.npmrc
           echo "always-auth=true" >> ~/.npmrc
           echo "email=nolet7@gmail.com" >> ~/.npmrc
           cat ~/.npmrc
@@ -64,4 +68,3 @@ jobs:
 
           docker push noletengine/npm-motivation:latest
           docker push noletengine/npm-motivation:$BUILD_VERSION
-
