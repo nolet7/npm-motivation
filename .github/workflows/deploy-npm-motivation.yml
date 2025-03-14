@@ -36,9 +36,6 @@ jobs:
 
           cat ~/.npmrc  # Debugging: Ensure .npmrc is correctly set
 
-      - name: Set NPM Config Path
-        run: echo "NPM_CONFIG_USERCONFIG=$HOME/.npmrc" >> $GITHUB_ENV
-
       - name: Debug `.npmrc` Before Installing Dependencies
         run: cat ~/.npmrc
 
