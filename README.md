@@ -145,6 +145,6 @@ docker ps
 ssh user@192.168.0.176 'docker restart npm-motivation'
 ```
 
-###  License
+#### License
 This project is **open-source** and follows standard licensing.
 
