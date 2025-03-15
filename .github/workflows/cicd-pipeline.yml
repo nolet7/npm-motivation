@@ -46,7 +46,7 @@ jobs:
           if jfrog config show artifactory > /dev/null 2>&1; then
             jfrog config remove artifactory
           fi
-          jfrog config add artifactory --url="https://nolet7.jfrog.io" --user="nolet7@gmail.com" --access-token="${{ secrets.JFROG_ACCESS_TOKEN }}" --interactive=false    
+          jfrog config add artifactory --url="https://nolet7.jfrog.io" --user="noleet7@gmail.com" --access-token="${{ secrets.JFROG_ACCESS_TOKEN }}" --interactive=false    
 
       - name: Build the project
         run: bash scripts/build.sh
