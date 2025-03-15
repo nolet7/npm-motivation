@@ -36,11 +36,13 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Install JFrog CLI
-        run: curl -fL https://getcli.jfrog.io | sh && mv jfrog /usr/local/bin/
+        run: |
+          curl -fL https://getcli.jfrog.io | sh
+          sudo mv jfrog /usr/local/bin/jfrog
 
       - name: Configure JFrog CLI
         run: |
-          jfrog config add artifactory --url="https://nolet7.jfrog.io/artifactory" --apikey="${{ secrets.JFROG_API_KEY }}" --interactive=false
+          jfrog config add artifactory --url="https://nolet7.jfrog.io/artifactory" --apikey="${{ secrets.JFROG }}" --interactive=false
 
       - name: Build the project
         run: bash scripts/build.sh
