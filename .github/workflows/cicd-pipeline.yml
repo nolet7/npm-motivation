@@ -35,10 +35,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install JFrog CLI
+      - name: Install JFrog CLI (Without sudo)
         run: |
           curl -fL https://getcli.jfrog.io | sh
-          sudo mv jfrog /usr/local/bin/jfrog
+          mkdir -p ~/bin
+          mv jfrog ~/bin/jfrog
+          echo "$HOME/bin" >> $GITHUB_PATH
 
       - name: Configure JFrog CLI
         run: |
