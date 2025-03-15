@@ -9,7 +9,8 @@
   },
   "scripts": {
     "start": "node src/index.js",
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest --coverage"
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest --coverage",
+    "build": "mkdir -p dist && cp -r src/* dist/"
   },
   "keywords": [],
   "author": "Your Name",
