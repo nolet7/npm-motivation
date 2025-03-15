@@ -64,9 +64,16 @@ jobs:
       - name: Enable Docker BuildKit
         run: echo "DOCKER_BUILDKIT=1" >> $GITHUB_ENV
 
+      - name: Ensure Docker Buildx is Installed
+        run: |
+          docker buildx version || echo "Buildx is missing"
+
       - name: Ensure Buildx is Available
         run: |
           docker buildx create --use || echo "Buildx already initialized"
+
+      - name: Fix Docker Socket Permissions
+        run: sudo chmod 666 /var/run/docker.sock
 
       - name: Log in to DockerHub
         run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
