@@ -44,8 +44,10 @@ jobs:
 
       - name: Configure JFrog CLI
         run: |
+          if jfrog config show artifactory > /dev/null 2>&1; then
+            jfrog config delete artifactory --quiet
+          fi
           jfrog config add artifactory --url="https://nolet7.jfrog.io/artifactory" --apikey="${{ secrets.JFROG }}" --interactive=false
-
       - name: Build the project
         run: bash scripts/build.sh
 
