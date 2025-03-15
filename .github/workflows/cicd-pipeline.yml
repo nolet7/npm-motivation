@@ -110,5 +110,5 @@ jobs:
           ssh-keyscan -H ${{ matrix.host }} >> ~/.ssh/known_hosts
 
       - name: Deploy to ${{ matrix.environment }}
-        run: bash ${{ matrix.script }}
+        run: bash ${{ matrix.script }} --user nolet7
 
