@@ -1,4 +1,3 @@
-# Updated pipeline
 name: CI/CD for npm-motivation with JFrog
 
 on:
@@ -47,12 +46,13 @@ jobs:
           if jfrog config show artifactory > /dev/null 2>&1; then
             jfrog config remove artifactory
           fi
-          jfrog config add artifactory --url="https://nolet7.jfrog.io/artifactory" --apikey="${{ secrets.JFROG }}" --interactive=false
+          jfrog config add artifactory --url="https://nolet7.jfrog.io" --user="noleet7@gmail.com" --access-token="${{ secrets.JFROG_ACCESS_TOKEN }}" --interactive=false
+
       - name: Build the project
         run: bash scripts/build.sh
 
-      - name: Upload artifact to JFrog
-        run: jfrog rt upload "dist/*" "npm-motivation-npm/"
+      - name: Upload artifact to JFrog (Local Repository)
+        run: jfrog rt upload "dist/*" "npm-motivation-npm-local/"
 
   docker-build:
     needs: store-artifacts
@@ -77,14 +77,20 @@ jobs:
   deploy:
     needs: docker-build
     runs-on: self-hosted  # Runs on 192.168.0.178
+    strategy:
+      matrix:
+        environment: [Demo_Prod_Env, xAI_Test_Env]
+        include:
+          - environment: Demo_Prod_Env
+            host: 192.168.0.119
+            script: scripts/deploy_demo_prod.sh
+          - environment: xAI_Test_Env
+            host: 192.168.0.176
+            script: scripts/deploy_xai_test.sh
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Deploy to Project Server (192.168.0.150)
-        run: |
-          ssh -o StrictHostKeyChecking=no user@192.168.0.150 << 'EOF'
-          cd ~/npm-motivation
-          bash scripts/deploy_project_server.sh
-          EOF
+      - name: Deploy to ${{ matrix.environment }}
+        run: bash ${{ matrix.script }}
 
