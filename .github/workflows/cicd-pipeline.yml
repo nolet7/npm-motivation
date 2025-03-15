@@ -46,7 +46,7 @@ jobs:
           if jfrog config show artifactory > /dev/null 2>&1; then
             jfrog config remove artifactory
           fi
-          jfrog config add artifactory --url="https://nolet7.jfrog.io" --user="noleet7@gmail.com" --access-token="${{ secrets.JFROG_ACCESS_TOKEN }}" --interactive=false
+          jfrog config add artifactory --url="https://nolet7.jfrog.io" --user="nolet7@gmail.com" --access-token="${{ secrets.JFROG_ACCESS_TOKEN }}" --interactive=false    
 
       - name: Build the project
         run: bash scripts/build.sh
@@ -61,13 +61,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      - name: Enable Docker BuildKit
+        run: echo "DOCKER_BUILDKIT=1" >> $GITHUB_ENV
+
+      - name: Ensure Buildx is Available
+        run: |
+          docker buildx create --use || echo "Buildx already initialized"
+
       - name: Log in to DockerHub
         run: echo "${{ secrets.DOCKERHUB_PASSWORD }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
-      - name: Build and tag Docker image
+      - name: Build and tag Docker image with Buildx
         run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/npm-motivation:latest .
-          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/npm-motivation:v1.0.0
+          docker buildx build --platform linux/amd64 -t ${{ secrets.DOCKERHUB_USERNAME }}/npm-motivation:latest --load .
+          docker tag ${{ secrets.DOCKERHUB_USERNAME }}/npm-motivation:latest ${{ secrets.DOCKERHUB_USERNAME }}/npm-motivation:v1.0.0
 
       - name: Push Docker image to DockerHub
         run: |
