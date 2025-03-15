@@ -46,7 +46,7 @@ jobs:
           if jfrog config show artifactory > /dev/null 2>&1; then
             jfrog config remove artifactory
           fi
-          jfrog config add artifactory --url="https://nolet7.jfrog.io" --user="noleet7@gmail.com" --access-token="${{ secrets.JFROG_ACCESS_TOKEN }}" --interactive=false     
+          jfrog config add artifactory --url="https://nolet7.jfrog.io" --user="noleet7@gmail.com" --access-token="${{ secrets.JFROG_ACCESS_TOKEN }}" --interactive=false    
 
       - name: Build the project
         run: bash scripts/build.sh
@@ -90,11 +90,11 @@ jobs:
     runs-on: self-hosted  # Runs on 192.168.0.178
     strategy:
       matrix:
-        environment: [Demo_Prod_Env, xAI_Test_Env]
+        environment: [xAI_Test_Env]  # Removed Demo_Prod_Env for now
         include:
-          - environment: Demo_Prod_Env
-            host: 192.168.0.119
-            script: scripts/deploy_demo_prod.sh
+          # - environment: Demo_Prod_Env   # Commented out
+          #   host: 192.168.0.119
+          #   script: scripts/deploy_demo_prod.sh
           - environment: xAI_Test_Env
             host: 192.168.0.176
             script: scripts/deploy_xai_test.sh

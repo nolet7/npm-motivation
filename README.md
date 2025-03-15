@@ -4,14 +4,14 @@
 **Email:** nolet7@gmail.com  
 
 ## Overview
-This project automates the **build, test, artifact storage, Docker image management, and deployment** of `npm-motivation`, an npm package stored in a **self-hosted Nexus repository** (`192.168.0.187`).
+This project automates the **build, test, artifact storage, Docker image management, and deployment** of `npm-motivation`, an npm package stored in **JFrog Artifactory** (`https://nolet7.jfrog.io`).
 
 It includes **automatic versioning**, **multi-environment deployment (Test & Demo_Prod)**, and **GitHub Actions for CI/CD**.
 
 ## Features
 - **Automated CI/CD Pipeline** using **GitHub Actions**
 - **Versioning with Date & Time (`YYYY.MM.DD-HHMM`)**
-- **Self-hosted Nexus Repository (`192.168.0.187`)** for npm artifacts
+- **JFrog Artifactory (`https://nolet7.jfrog.io`)** for npm artifacts
 - **Docker Image Build & Push to DockerHub (`noletengine/npm-motivation`)**
 - **Multi-Environment Deployment**:
   - **Test Environment**: `192.168.0.176`
@@ -21,11 +21,11 @@ It includes **automatic versioning**, **multi-environment deployment (Test & Dem
 ## CI/CD Workflow Overview
 ### 1️⃣ Build & Test
 - ✅ Checks out code
-- ✅ Installs dependencies from **Nexus** (with fallback to `npmjs.org`)
+- ✅ Installs dependencies from **JFrog Artifactory** (with fallback to `npmjs.org`)
 - ✅ Runs unit tests
 
-### 2️⃣ Publish to Nexus
--  Publishes versioned npm package to **Nexus (`192.168.0.187`)**
+### 2️⃣ Publish to JFrog Artifactory
+-  Publishes versioned npm package to **JFrog (`https://nolet7.jfrog.io`)**
 
 ### 3️⃣ Build & Push Docker Image
 -  Builds **Docker Image**
@@ -46,11 +46,11 @@ It includes **automatic versioning**, **multi-environment deployment (Test & Dem
    - `demo_prod` → Deploys to **Demo_Prod** (`192.168.0.119`)
    - `all` → Deploys to **both environments**
 
-## Running Locally
+## Development Setup
 ### Clone the Repository
 ```sh
-git clone https://github.com/nolet7/motivational-cli.git
-cd motivational-cli
+git clone https://github.com/nolet7/npm-motivation.git
+cd npm-motivation
 ```
 
 ### Install Dependencies
@@ -75,7 +75,7 @@ bash scripts/push_docker.sh
 ### GitHub Secrets Required
 | Secret Name  | Description |
 |-------------|------------|
-| `NPM_AUTH_TOKEN` | Nexus API Key for npm publishing |
+| `JFROG_ACCESS_TOKEN` | JFrog API Key for npm publishing |
 | `DOCKER_USERNAME` | DockerHub Username |
 | `DOCKER_PASSWORD` | DockerHub Password or Access Token |
 | `TEST_SERVER_IP` | Test Environment IP (`192.168.0.176`) |
@@ -98,8 +98,8 @@ bash scripts/push_docker.sh
           │
           ▼
 +---------------------------+
-|  Publish to Nexus         |
-|  (192.168.0.187)          |
+|  Publish to JFrog         |
+|  (https://nolet7.jfrog.io)|
 +---------------------------+
           │
           ▼
@@ -147,4 +147,5 @@ ssh user@192.168.0.176 'docker restart npm-motivation'
 
 #### License
 This project is **open-source** and follows standard licensing.
+
 
